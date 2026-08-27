@@ -1,5 +1,4 @@
 let voicesLoaded = false; 
-
 window.speechSynthesis.onvoiceschanged = () => { 
   window.speechSynthesis.getVoices(); 
   voicesLoaded = true; 
@@ -60,23 +59,26 @@ async function handleCommand(cmd) {
     addMsg('bot', "The time is " + new Date().toLocaleTimeString());
   } 
   else {
-    // FIXED: Use DuckDuckGo instead of Wikipedia
+    // FIXED: Use a free proxy so GitHub Pages allows it
     addMsg('bot', "Let me check that for you");
     try {
       const query = encodeURIComponent(cmd);
-      const res = await fetch(`https://api.duckgo.com/?q=${query}&format=json&no_redirect=1&no_html=1`);
-      const data = await res.json();
+      const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.duckduckgo.com/?q='+query+'&format=json')}`;
+      const res = await fetch(url);
+      const wrapper = await res.json();
+      const data = JSON.parse(wrapper.contents);
       
-      let answer = data.AbstractText || data.Answer || data.Heading;
+      let answer = data.AbstractText || data.Answer || data.Heading || data.RelatedTopics[0]?.Text;
       
       if(answer) {
         addMsg('bot', answer);
       } else {
-        addMsg('bot', `I couldn't find that. Let me google it for you`);
+        addMsg('bot', `I couldn't find that. Opening Google for you`);
         window.open(`https://www.google.com/search?q=${query}`);
       }
     } catch(e) {
       addMsg('bot', "Sorry, I can't search right now. Check your internet");
+      console.log(e);
     }
   }
 }
