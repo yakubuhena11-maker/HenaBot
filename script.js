@@ -44,7 +44,7 @@ function startListening() {
   recognition.start();
 }
 
-async function handleCommand(cmd) {
+function handleCommand(cmd) {
   const lower = cmd.toLowerCase();
   
   if(lower.includes("whatsapp")) {
@@ -59,26 +59,10 @@ async function handleCommand(cmd) {
     addMsg('bot', "The time is " + new Date().toLocaleTimeString());
   } 
   else {
-    // FINAL FIX: Use api.co which allows GitHub Pages
-    addMsg('bot', "Let me check that for you");
-    try {
-      const query = encodeURIComponent(cmd);
-      const res = await fetch(`https://api.duckduckgo.com/?q=${query}&format=json&no_html=1`);
-      const data = await res.json();
-      
-      let answer = data.AbstractText;
-      
-      if(answer && answer.length > 10) {
-        addMsg('bot', answer);
-      } else {
-        // If no answer, just google it
-        addMsg('bot', `I don't have that. Opening Google for: ${cmd}`);
-        window.open(`https://www.google.com/search?q=${query}`);
-      }
-    } catch(e) {
-      addMsg('bot', "My search is blocked. But I can still open Google for you");
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`);
-    }
+    // FINAL: No API. Just Google it and say it
+    addMsg('bot', `Searching Google for: ${cmd}`);
+    speak(`Searching Google for ${cmd}`);
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`);
   }
 }
 
