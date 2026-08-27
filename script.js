@@ -1,9 +1,8 @@
-let voicesLoaded = false;
+let voicesLoaded = false; 
 
-// Load voices first
-window.speechSynthesis.onvoiceschanged = () => {
-  window.speechSynthesis.getVoices();
-  voicesLoaded = true;
+window.speechSynthesis.onvoiceschanged = () => { 
+  window.speechSynthesis.getVoices(); 
+  voicesLoaded = true; 
 };
 
 function speak(text) {
@@ -22,11 +21,11 @@ function speak(text) {
 function addMsg(who, text) {
   document.getElementById("chat").innerHTML += `<p class="${who}"><b>${who==='me'?'You':'HenaBot'}:</b> ${text}</p>`;
   document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
-  if(who === 'bot') speak(text); // auto speak every bot reply
+  if(who === 'bot') speak(text);
 }
 
 function unlockVoice() {
-  speak("Voice unlocked"); // this 1 tap unlocks chrome
+  speak("Voice unlocked");
   addMsg('bot', "Voice Unlocked! Now you can talk to me");
 }
 
@@ -48,32 +47,36 @@ function startListening() {
 
 async function handleCommand(cmd) {
   const lower = cmd.toLowerCase();
-
+  
   if(lower.includes("whatsapp")) {
     addMsg('bot', "Opening WhatsApp for you");
     window.location.href = "whatsapp://";
-  }
+  } 
   else if(lower.includes("camera")) {
     addMsg('bot', "Opening Camera");
     window.location.href = "intent://#Intent;action=android.media.action.IMAGE_CAPTURE;end";
-  }
+  } 
   else if(lower.includes("time")) {
     addMsg('bot', "The time is " + new Date().toLocaleTimeString());
-  }
+  } 
   else {
-    // NEW: Answer any question using Wikipedia
+    // FIXED: Use DuckDuckGo instead of Wikipedia
     addMsg('bot', "Let me check that for you");
     try {
       const query = encodeURIComponent(cmd);
-      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${query}`);
+      const res = await fetch(`https://api.duckgo.com/?q=${query}&format=json&no_redirect=1&no_html=1`);
       const data = await res.json();
-      if(data.extract) {
-        addMsg('bot', data.extract);
+      
+      let answer = data.AbstractText || data.Answer || data.Heading;
+      
+      if(answer) {
+        addMsg('bot', answer);
       } else {
-        addMsg('bot', "I couldn't find an answer for that");
+        addMsg('bot', `I couldn't find that. Let me google it for you`);
+        window.open(`https://www.google.com/search?q=${query}`);
       }
     } catch(e) {
-      addMsg('bot', "Sorry, I can't search right now");
+      addMsg('bot', "Sorry, I can't search right now. Check your internet");
     }
   }
 }
