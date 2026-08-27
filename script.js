@@ -1,29 +1,38 @@
+let voicesLoaded = false;
+
 function addMsg(who, text) {
   document.getElementById("chat").innerHTML += `<p class="${who}"><b>${who==='me'?'You':'HenaBot'}:</b> ${text}</p>`;
   document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
 
-  // FIXED: Make HenaBot talk back with delay
-  if(who === 'bot' && 'speechSynthesis' in window) {
+  if(who === 'bot' && voicesLoaded) {
     setTimeout(() => {
-      window.speechSynthesis.cancel(); // stop previous speech
+      window.speechSynthesis.cancel();
       const speech = new SpeechSynthesisUtterance(text);
-      speech.rate = 1; // speed
-      speech.pitch = 1; // voice tone
-      speech.volume = 1; // MAX volume
+      speech.rate = 1;
+      speech.pitch = 1;
+      speech.volume = 1;
       speech.lang = "en-US";
-
-      // Pick a good voice
       const voices = window.speechSynthesis.getVoices();
-      const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
-      if(englishVoice) speech.voice = englishVoice;
-
+      speech.voice = voices.find(v => v.name.includes('Google') && v.lang === 'en-US') || voices[0];
       window.speechSynthesis.speak(speech);
-    }, 400); // wait 400ms after mic stops
+    }, 300);
   }
 }
 
+function unlockVoice() {
+  // This empty speak "unlocks" chrome
+  const speech = new SpeechSynthesisUtterance(" ");
+  window.speechSynthesis.speak(speech);
+  voicesLoaded = true;
+  addMsg('bot', "Voice Unlocked! Now tap Talk");
+}
+
 function startListening() {
-  window.speechSynthesis.cancel(); // stop bot talking while listening
+  if(!voicesLoaded) {
+    addMsg('bot', "Tap Unlock Voice first");
+    return;
+  }
+  window.speechSynthesis.cancel();
   addMsg('bot', "Listening...");
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "en-US";
@@ -47,26 +56,23 @@ function handleCommand(cmd) {
     addMsg('bot', "Opening Camera");
     window.location.href = "intent://#Intent;action=android.media.action.IMAGE_CAPTURE;end";
   }
-  else if(cmd.includes("answer") && cmd.includes("call")) {
-    addMsg('bot', "Trying to answer call. You need Tasker for this");
-  }
   else if(cmd.includes("time")) {
     addMsg('bot', "The time is " + new Date().toLocaleTimeString());
   }
-  else if(cmd.includes("test voice")) {
-    addMsg('bot', "Hello, this is HenaBot. Can you hear me?");
+  else if(cmd.includes("test")) {
+    addMsg('bot', "Hello, this is HenaBot speaking");
   }
   else {
     addMsg('bot', "I heard: " + cmd);
   }
 }
 
-// Wait for voices to load
-window.speechSynthesis.onvoiceschanged = () => {};
+// Load voices
+window.speechSynthesis.onvoiceschanged = () => {
+  window.speechSynthesis.getVoices();
+};
 
 document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("unlockBtn").addEventListener("click", unlockVoice);
   document.getElementById("talkBtn").addEventListener("click", startListening);
-  setTimeout(() => {
-    addMsg('bot', "HenaBot Ready! Tap the mic and talk to me");
-  }, 500);
 });
