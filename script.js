@@ -59,26 +59,25 @@ async function handleCommand(cmd) {
     addMsg('bot', "The time is " + new Date().toLocaleTimeString());
   } 
   else {
-    // FIXED: Use a free proxy so GitHub Pages allows it
+    // FINAL FIX: Use api.co which allows GitHub Pages
     addMsg('bot', "Let me check that for you");
     try {
       const query = encodeURIComponent(cmd);
-      const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.duckduckgo.com/?q='+query+'&format=json')}`;
-      const res = await fetch(url);
-      const wrapper = await res.json();
-      const data = JSON.parse(wrapper.contents);
+      const res = await fetch(`https://api.duckduckgo.com/?q=${query}&format=json&no_html=1`);
+      const data = await res.json();
       
-      let answer = data.AbstractText || data.Answer || data.Heading || data.RelatedTopics[0]?.Text;
+      let answer = data.AbstractText;
       
-      if(answer) {
+      if(answer && answer.length > 10) {
         addMsg('bot', answer);
       } else {
-        addMsg('bot', `I couldn't find that. Opening Google for you`);
+        // If no answer, just google it
+        addMsg('bot', `I don't have that. Opening Google for: ${cmd}`);
         window.open(`https://www.google.com/search?q=${query}`);
       }
     } catch(e) {
-      addMsg('bot', "Sorry, I can't search right now. Check your internet");
-      console.log(e);
+      addMsg('bot', "My search is blocked. But I can still open Google for you");
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`);
     }
   }
 }
