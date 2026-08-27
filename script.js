@@ -1,43 +1,42 @@
 let voicesLoaded = false;
 
+// Load voices first
+window.speechSynthesis.onvoiceschanged = () => {
+  window.speechSynthesis.getVoices();
+  voicesLoaded = true;
+};
+
+function speak(text) {
+  if(!voicesLoaded) return;
+  window.speechSynthesis.cancel();
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.rate = 1;
+  speech.pitch = 1;
+  speech.volume = 1;
+  speech.lang = "en-US";
+  const voices = window.speechSynthesis.getVoices();
+  speech.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+  window.speechSynthesis.speak(speech);
+}
+
 function addMsg(who, text) {
   document.getElementById("chat").innerHTML += `<p class="${who}"><b>${who==='me'?'You':'HenaBot'}:</b> ${text}</p>`;
   document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
-
-  if(who === 'bot' && voicesLoaded) {
-    setTimeout(() => {
-      window.speechSynthesis.cancel();
-      const speech = new SpeechSynthesisUtterance(text);
-      speech.rate = 1;
-      speech.pitch = 1;
-      speech.volume = 1;
-      speech.lang = "en-US";
-      const voices = window.speechSynthesis.getVoices();
-      speech.voice = voices.find(v => v.name.includes('Google') && v.lang === 'en-US') || voices[0];
-      window.speechSynthesis.speak(speech);
-    }, 300);
-  }
+  if(who === 'bot') speak(text); // auto speak every bot reply
 }
 
 function unlockVoice() {
-  // This empty speak "unlocks" chrome
-  const speech = new SpeechSynthesisUtterance(" ");
-  window.speechSynthesis.speak(speech);
-  voicesLoaded = true;
-  addMsg('bot', "Voice Unlocked! Now tap Talk");
+  speak("Voice unlocked"); // this 1 tap unlocks chrome
+  addMsg('bot', "Voice Unlocked! Now you can talk to me");
 }
 
 function startListening() {
-  if(!voicesLoaded) {
-    addMsg('bot', "Tap Unlock Voice first");
-    return;
-  }
   window.speechSynthesis.cancel();
   addMsg('bot', "Listening...");
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "en-US";
   recognition.onresult = (e) => {
-    const cmd = e.results[0][0].transcript.toLowerCase();
+    const cmd = e.results[0][0].transcript;
     addMsg('me', cmd);
     handleCommand(cmd);
   };
@@ -47,30 +46,37 @@ function startListening() {
   recognition.start();
 }
 
-function handleCommand(cmd) {
-  if(cmd.includes("whatsapp")) {
+async function handleCommand(cmd) {
+  const lower = cmd.toLowerCase();
+
+  if(lower.includes("whatsapp")) {
     addMsg('bot', "Opening WhatsApp for you");
     window.location.href = "whatsapp://";
   }
-  else if(cmd.includes("camera")) {
+  else if(lower.includes("camera")) {
     addMsg('bot', "Opening Camera");
     window.location.href = "intent://#Intent;action=android.media.action.IMAGE_CAPTURE;end";
   }
-  else if(cmd.includes("time")) {
+  else if(lower.includes("time")) {
     addMsg('bot', "The time is " + new Date().toLocaleTimeString());
   }
-  else if(cmd.includes("test")) {
-    addMsg('bot', "Hello, this is HenaBot speaking");
-  }
   else {
-    addMsg('bot', "I heard: " + cmd);
+    // NEW: Answer any question using Wikipedia
+    addMsg('bot', "Let me check that for you");
+    try {
+      const query = encodeURIComponent(cmd);
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${query}`);
+      const data = await res.json();
+      if(data.extract) {
+        addMsg('bot', data.extract);
+      } else {
+        addMsg('bot', "I couldn't find an answer for that");
+      }
+    } catch(e) {
+      addMsg('bot', "Sorry, I can't search right now");
+    }
   }
 }
-
-// Load voices
-window.speechSynthesis.onvoiceschanged = () => {
-  window.speechSynthesis.getVoices();
-};
 
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("unlockBtn").addEventListener("click", unlockVoice);
