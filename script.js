@@ -39,3 +39,16 @@ function handleCommand(cmd) {
     addMsg('bot', "I heard: " + cmd + ". Try 'answer call' or 'open whatsapp'");
   }
 }
+else if(cmd.includes("open camera")) {
+  addMsg('bot', "Opening Camera");
+  window.location.href = "intent://#Intent;action=android.media.action.IMAGE_CAPTURE;end";
+}
+else if(cmd.includes("call") && cmd.includes("back")) {
+  addMsg('bot', "Got it. I’ll remind you to call back later");
+  // Later we’ll connect this to Tasker + Alarm
+}
+else if(cmd.includes("text") ) {
+  addMsg('bot', "Opening WhatsApp to send message");
+  let msg = cmd.replace("text", "").trim();
+  window.location.href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+}
