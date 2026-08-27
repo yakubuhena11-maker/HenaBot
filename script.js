@@ -38,5 +38,8 @@ function handleCommand(cmd) {
   } 
 }
 
-// THIS LINE MAKES THE BUTTON WORK
-document.getElementById("talkBtn").addEventListener("click", startListening);
+// FIXED: Wait for page to load before connecting button
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("talkBtn").addEventListener("click", startListening);
+  addMsg('bot', "Bot Ready! Tap the mic");
+});
